@@ -60,19 +60,21 @@ import java.io.*;
 class Day4_P1 {
 	public static int max(int[] temp) {
 		int max = temp[0];
+		int mId = 0;
 		
 		for (int i = 1; i < temp.length; i++) {
 			if (temp[i] > max) {
 				max = temp[i];
+				mId = i;
 			}
 		}
 		
-		return max;
+		return mId;
 	}
 	
 	public static void main(String[] args) {
 		try {
-			Scanner input  = new Scanner(new File("Day4_Test.txt"));
+			Scanner input  = new Scanner(new File("Day4_Sorted.txt"));
 			HashMap<Integer, ArrayList<Object>> schedule = new HashMap<>();
 			int[] minutes = new int[60];
 			String time   = "";
@@ -80,24 +82,26 @@ class Day4_P1 {
 			int id  = 0;
 			int sum = 0;
 			int max = 0;
-			int mID = 0;
+			int mId = 0;
+			int start = 0;
+			int end   = 0;
 			
 			while(input.hasNext()) {
 				time = input.nextLine();
 				int indCol = time.indexOf(":");
 				
-				int start = Integer.parseInt(time.substring(time.indexOf(" "), indCol));
-				int end   = Integer.parseInt(time.substring(indCol + 1, indCol + 3));
-				
 				if (time.contains("Guard")) {
 					int indPd = time.indexOf("#");
 					id = Integer.parseInt(time.substring(indPd + 1, time.indexOf(" ", indPd)));
+					awake = false;
 				}
 				else if (time.contains("wakes")) {
+					end   = Integer.parseInt(time.substring(indCol + 1, indCol + 3));
 					awake = true;
 				}
 				else if (time.contains("falls")) {
-				awake = false;
+					start = Integer.parseInt(time.substring(indCol + 1, indCol + 3));
+					awake = false;
 				}
 				
 				if (awake) {
@@ -105,9 +109,9 @@ class Day4_P1 {
 					if (schedule.containsKey(id)) {
 						ArrayList<Object> guard = schedule.get(id);
 						s	  = (int)(guard.get(0));
-						int[] min = guard.get(1);
+						int[] min = (int[])guard.get(1);
 						
-						s += (end - start);
+						s += (end - start) % 60;
 						guard.set(0, s);
 						
 						for (int i = start; i < end; i++) {
@@ -121,7 +125,7 @@ class Day4_P1 {
 						ArrayList<Object> guard = new ArrayList<Object>();
 						int[] min = new int[60];
 						
-						s += (end - start);
+						s += (end - start) % 60;
 						guard.add(s);
 						
 						for (int i = start; i < end; i++) {
@@ -131,19 +135,22 @@ class Day4_P1 {
 						
 						schedule.put(id, guard);
 					}
+					
 					if (s > max) {
 						max = s;
-						mID = id;
+						mId = id;
 					}
 				}
 			}
 			input.close();
 			
 			ArrayList<Object> guard = schedule.get(mId);
-			int[] min = guard.get(1);
-			int maxMin = min(guard.get(1));
+			int[] min = (int[])guard.get(1);
+			int maxMin = max(min);
 			
-			System.out.println("The ID of the guard you chose multiplied by the minute you chose: " + (maxMin * mId));
+			System.out.println("ID of the guard chosen: " + 
+						 mId + "\n       * minute chosen: " +
+						 maxMin + "\n------------------------------\n\t\t Total: " + (maxMin * mId));
 		}
 		catch (FileNotFoundException e) {
 			System.out.println("File not found");
