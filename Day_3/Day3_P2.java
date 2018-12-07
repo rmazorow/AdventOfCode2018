@@ -21,31 +21,20 @@ For example, in the claims below, only claim 3 is intact after all claims are ma
 
 What is the ID of the only claim that doesn't overlap?
 */
-import java.util.Scanner;
-import java.util.ArrayList;
-import java.io.File;
+import java.util.*;
 import java.io.*;
 
 class Day3_P2 {
-	static ArrayList<ArrayList<Integer>> fabric = new ArrayList<ArrayList<Integer>>();
-	
-	public static void addNew(int w, int h) {
-		try {
-			ArrayList<Integer> temp = fabric.get(w);
-			temp.add(h, 1);
-		} catch (Exception e) {
-			ArrayList<Integer> temp = new ArrayList<Integer>();
-			temp.add(h, 1);
-			fabric.add(w, temp);
-		}
-	}
-	
 	public static void main(String[] args) {
 		try {
 			Scanner input   = new Scanner(new File("Day3.txt"));
-			boolean overlap = false;
-			String claim    = "";
-			String id       = "";
+			HashMap<String, String> fabric = new HashMap<String, String>();
+			ArrayList<String> ids   = new ArrayList<String>();
+			boolean overlaps = false;
+			String claim = "";
+			String id    = "";
+			int indPd  = 0;
+			int indSp  = 0;
 			int indAt  = 0;
 			int indCom = 0;
 			int indCol = 0;
@@ -58,10 +47,13 @@ class Day3_P2 {
 			while(input.hasNext()) {
 				claim = input.nextLine();
 				// #id @ left,top: widthxheight
+				indPd  = claim.indexOf('#');
+				indSp  = claim.indexOf(' ');
 				indAt  = claim.indexOf('@');
 				indCom = claim.indexOf(',');
 				indCol = claim.indexOf(':');
 				indX   = claim.indexOf('x');
+				id     = claim.substring(indPd + 1, indSp);
 				left   = Integer.parseInt(claim.substring(indAt + 2, indCom));
 				top    = Integer.parseInt(claim.substring(indCom + 1, indCol));
 				width  = Integer.parseInt(claim.substring(indCol + 2, indX));
@@ -70,20 +62,59 @@ class Day3_P2 {
 				// Create coordinates for claimed fabric
 				for (int w = left; w < left + width; w++) {
 					for (int h = top; h < top + height; h++) {
-						try {
-							ArrayList<Integer> temp = fabric.get(w);
-							int current = temp.get(h);
-							temp.set(h, current + 1);
+						String coord = w + "," + h;
+						
+						// HashMap is <String coordinate, String idList>
+						// Insert claim id if it includes the coordinate
+						if(!fabric.containsKey(coord)) {
+							fabric.put(coord, " " + id);
 						}
-						catch (Exception e) {
-							addNew(w, h);
+						else {
+							fabric.replace(coord, fabric.get(coord) + " " + id);
+							overlaps = true;
 						}
 					}
 				}
+				// If nothing currently overlaps with this id claim,
+				// add to ArrayList of ids
+				if (!overlaps) {
+					ids.add(id);
+				}
+				overlaps = false;
 			}
 			input.close();
 			
-			System.out.println("The ID of the only claim that doesn't overlap is " + id);
+			String unique = "";
+			
+			// Check all non-overlapping ids at time of inspection
+			// and find the one that still does not overlap
+			for (int i = 0; i < ids.size(); i++) {
+				// Declare iterator for HashMap fabric
+				Iterator entries = fabric.entrySet().iterator();
+				while (entries.hasNext() && !overlaps) {
+					Map.Entry entry = (Map.Entry) entries.next();
+					String swatch = (String)entry.getValue();
+					
+					// If HashMap value contains id, see how many ids that coord contains
+					// If > 1 id, then this claim has an overlap and we can skip
+					if (swatch.contains(" " + ids.get(i))) {
+						String[] temp = swatch.split(" ");
+						
+						if (temp.length > 2) {
+							overlaps = true;
+							break;
+						}
+					}
+				}
+				if (!overlaps) {
+					unique = ids.get(i);
+					break;
+				}
+				overlaps = false;
+			}
+
+			
+			System.out.println("The ID of the only claim that doesn't overlap is " + unique);
 		}
 		catch (FileNotFoundException e) {
 			System.out.println("File not found");
