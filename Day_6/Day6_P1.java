@@ -53,84 +53,118 @@ What is the size of the largest area that isn't infinite?
  */
 import java.util.*;
 import java.io.*;
+import java.awt.*;
 
 public class Day6_P1 {
     public static void main(String[] args) {
         try {
-            Scanner input = new Scanner(new File("Day6_Test.txt"));
+            Scanner input = new Scanner(new File("Day6.txt"));
             ArrayList<String> coord = new ArrayList<String>();
-            int topX = Integer.MAX_VALUE;
+            ArrayList<String> valid = new ArrayList<String>();
             int topY = Integer.MAX_VALUE;
-            int botX = Integer.MIN_VALUE;
             int botY = Integer.MIN_VALUE;
             int lefX = Integer.MAX_VALUE;
-            int lefY = Integer.MAX_VALUE;
             int rigX = Integer.MIN_VALUE;
-            int rigY = Integer.MIN_VALUE;
             
+            // Read in the coordinates and determine the height and width of grid
             while(input.hasNextLine()) {
                 String temp = input.nextLine();
                 int x = Integer.parseInt(temp.substring(0, temp.indexOf(",")));
                 int y = Integer.parseInt(temp.substring(temp.indexOf(",") + 2));
                 coord.add(temp);
+                valid.add(temp);
                 
+                // If edge-most, set to new edge
                 if (y < topY) {
-                    topX = x;
                     topY = y;
-                    coord.remove(temp);
                 }
                 else if (y > botY) {
-                    botX = x;
                     botY = y;
-                    coord.remove(temp);
                 }
                 if (x > rigX) {
                     rigX = x;
-                    rigY = y;
-                    coord.remove(temp);
                 }
                 else if (x < lefX) {
                     lefX = x;
-                    lefY = y;
-                    coord.remove(temp);
+                }
+            }
+            // remove edges from valid list to prevent infinite areas
+            for (String s : coord) {
+                String x = s.substring(0, s.indexOf(","));
+                String y = s.substring(s.indexOf(",") + 2);
+                
+                if (x.equals(lefX) || x.equals(rigX) || y.equals(topY) || y.equals(botY)) {
+                    valid.remove(s);
                 }
             }
             
-            /*
-            System.out.println("Top:   (" + topX + "," + topY + ")");
+            /*System.out.println("Top:   (" + topX + "," + topY + ")");
             System.out.println("Bot:   (" + botX + "," + botY + ")");
             System.out.println("Left:  (" + lefX + "," + lefY + ")");
             System.out.println("Right: (" + rigX + "," + rigY + ")");
-            */
             
-            String[][] grid = new String[rigX - lefX + 1][botY - topY + 1];
-            int[][] dist = new int[rigX - lefX + 1][botY - topY + 1];
+            System.out.println("# coord: " + coord.size());
+            System.out.println("width:   " + (rigX - lefX + 1));
+            System.out.println("height:  " + (botY - topY + 1));*/
             
+            HashMap<String, String> grid = new HashMap<String, String>();
+            HashMap<String, Integer> dist = new HashMap<String, Integer>();
+            
+            // Build grid to contain coordinate and closet point (as index of coord)
+            // Build dist to contain coordinate and distance to closet point
             for (int i = 0; i < coord.size(); i++) {
                 String temp = coord.get(i);
                 int x = Integer.parseInt(temp.substring(0, temp.indexOf(",")));
                 int y = Integer.parseInt(temp.substring(temp.indexOf(",") + 2));
-                for (int row = 0; row <= botY - topY + 1; row++) {
-                    for (int col = 0; col <= rigY - lefY + 1; col++) {
-                        int distance = Math.abs(x - col) + Math.abs(y - row);
-                        if (distance < dist[row][col]) {
-                            dist[row][col] = distance;
-                            grid[row][col] = Integer.toString(i);
+                
+                for (int y2 = topY; y2 < botY + 1; y2++) {
+                    for (int x2 = lefX; x2 < rigX + 1; x2++) {
+                        String loc = x2 + ", " + y2;
+                        int distance = Math.abs(x - x2) + Math.abs(y - y2);
+                        if (!grid.containsKey(loc)) {
+                            dist.put(loc, distance);
+                            grid.put(loc, Integer.toString(i));
                         }
-                        else if(distance == dist[row][col]) {
-                            grid[row][col] = ".";
+                        else {
+                            if (distance < dist.get(loc)) {
+                                dist.replace(loc, distance);
+                                grid.replace(loc, Integer.toString(i));
+                            }
+                            else if(distance == dist.get(loc)) {
+                                grid.replace(loc, ".");
+                            }
                         }
                     }
                 }
             }
-            
-            for (int row = 0; row <= botY - topY + 1; row++) {
-                for (int col = 0; col <= rigY - lefY + 1; col++) {
-                    System.out.print(grid[row][col]);
+            /*for (int y3 = topY; y3 < botY + 1; y3++) {
+                for (int x3 = lefX; x3 < rigX + 1; x3++) {
+                    System.out.print(grid.get(x3 + ", " + y3) + " ");
                 }
                 System.out.println();
             }
+            System.out.println();*/
             
+            int max = 0;
+            
+            for (int i = 0; i < coord.size(); i++) {
+                int count = 0;
+                
+                if (valid.contains(coord.get(i))){
+                    for (String c : grid.values()) {
+                        if (Integer.toString(i).equals(c)) {
+                            count++;
+                        }
+                    }
+                }
+                
+                //System.out.println(coord.get(i) + "(" + i + "): " + count);
+                if (count > max) {
+                    max = count;
+                }
+            }
+            
+            System.out.println("The size of the largest area that isn't infinite is: " + max);
         }
         catch(IOException ex) {
             System.out.println("File not found");
